@@ -7,7 +7,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class ActivitiflowApplication {
 
     public static void main(String[] args) {
+
         SpringApplication.run(ActivitiflowApplication.class, args);
+
+
     }
 
 }

@@ -1,0 +1,28 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <bean id="processEngineConfiguration" class="org.activiti.engine.impl.cfg.StandaloneProcessEngineConfiguration">
+        <!--&characterEncoding=utf8-->
+        <property name="jdbcUrl" value="jdbc:mysql://150.158.199.167:3306/activiti?useUnicode=true" />
+        <property name="jdbcDriver" value="com.mysql.cj.jdbc.Driver" />
+        <property name="jdbcUsername" value="root" />
+        <property name="jdbcPassword" value="root" />
+        <!-- 流程引擎启动和关闭时处理 数据库架构  -->
+        <property name="databaseSchemaUpdate" value="true" />
+
+        <property name="asyncExecutorActivate" value="false" />
+
+        <property name="mailServerHost" value="mail.my-corp.com" />
+        <property name="mailServerPort" value="5025" />
+    </bean>
+
+    <!--<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource" >
+        <property name="driverClassName" value="com.mysql.jdbc.Driver" />
+        <property name="url" value="jdbc:mysql://localhost:3306/activiti" />
+        <property name="username" value="activiti" />
+        <property name="password" value="activiti" />
+        <property name="defaultAutoCommit" value="false" />
+    </bean>-->
+
+</beans>

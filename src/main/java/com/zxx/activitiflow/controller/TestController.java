@@ -2,6 +2,8 @@ package com.zxx.activitiflow.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.activiti.engine.ProcessEngine;
+import org.activiti.engine.ProcessEngineConfiguration;
+import org.activiti.engine.ProcessEngines;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -36,6 +38,8 @@ public class TestController {
         map.put("主机名",hostName);
         map.put("主机地址",hostAddress);
         log.info("测试日志");
+        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+        ProcessEngineConfiguration.createStandaloneProcessEngineConfiguration();
         return map;
     }
 }

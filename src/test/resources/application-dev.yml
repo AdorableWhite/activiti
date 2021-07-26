@@ -1,0 +1,4 @@
+spring:
+  application:
+    # 项目名称启动时传入Log4j2作为app名称
+    name: test-k8s

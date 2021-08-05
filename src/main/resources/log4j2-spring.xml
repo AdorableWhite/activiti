@@ -9,9 +9,9 @@
         <property name="pattern">%d{yyyy-MM-dd HH:mm:ss,SSS} [%-5level] [%X{traceId}] [%t] [%C{1.}] %msg%n</property>
 
         <!--SpringBoot读取的配置地址，端口以及日志格式-->
-        <Property name="logstashAddress">${ctx:log4j2.logstash.address}</Property>
+        <!--<Property name="logstashAddress">${ctx:log4j2.logstash.address}</Property>
         <Property name="logstashPort">${ctx:log4j2.logstash.port}</Property>
-        <Property name="logstashPattern">${ctx:log4j2.logstash.pattern}</Property>
+        <Property name="logstashPattern">${ctx:log4j2.logstash.pattern}</Property>-->
     </properties>
     <!--先定义所有的appender-->
     <appenders>
@@ -71,7 +71,7 @@
             </Policies>
         </RollingFile>
         <!-- Socket TCP方式推送日志到Logstash中，只推送INFO以及以上级别日志 -->
-        <Socket>
+        <!--<Socket>
             <name>logstash</name>
             <protocol>TCP</protocol>
             <port>${logstashPort}</port>
@@ -79,7 +79,7 @@
             <PatternLayout pattern="${logstashPattern}"/>
             <reconnectionDelay>5000</reconnectionDelay>
             <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
-        </Socket>
+        </Socket>-->
     </appenders>
     <!--然后定义logger，只有定义了logger并引入的appender，appender才会生效-->
     <loggers>
@@ -94,15 +94,15 @@
             <appender-ref ref="warnLog"/>
             <appender-ref ref="errorLog"/>
         </logger>
-        <logger name="logstashLog" level="info" additivity="false">
+        <!--<logger name="logstashLog" level="info" additivity="false">
             <appender-ref ref="logstash"/>
-        </logger>
+        </logger>-->
         <root level="debug">
             <appender-ref ref="console"/>
             <appender-ref ref="infoLog"/>
             <appender-ref ref="warnLog"/>
             <appender-ref ref="errorLog"/>
-            <appender-ref ref="logstash" />
+            <!--<appender-ref ref="logstash" />-->
         </root>
     </loggers>
 </configuration>

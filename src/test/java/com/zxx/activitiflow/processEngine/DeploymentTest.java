@@ -28,10 +28,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -73,14 +70,33 @@ public class DeploymentTest {
         collect.forEach(flow -> {
             boolean b = flow.hasMultiInstanceLoopCharacteristics();
             MultiInstanceLoopCharacteristics loopCharacteristics = flow.getLoopCharacteristics();
+
+
+            //用户节点
+            MultiInstanceLoopCharacteristics  multiInstanceLoopCharacteristics = new MultiInstanceLoopCharacteristics();
+            //审批人集合参数
+            multiInstanceLoopCharacteristics.setInputDataItem("assigneeList");
+            //迭代集合
+            multiInstanceLoopCharacteristics.setElementVariable("assignee");
+            //完成条件 已完成数等于实例数
+            multiInstanceLoopCharacteristics.setCompletionCondition("${nrOfActiveInstances == nrOfInstances}");
+            //并行
+            multiInstanceLoopCharacteristics.setSequential(loopCharacteristics.isSequential());
+//            taskNode.setAssignee("${assignee}");
+            //设置多实例属性
+            flow.setLoopCharacteristics(multiInstanceLoopCharacteristics);
+            /*//设置监听器
+            taskNode.setExecutionListeners(countersignTaskListener());
+            //设置审批人
+            taskNode.setCandidateUsers(candidateUser);*/
+
             boolean sequential = loopCharacteristics.isSequential();
             System.out.println(flow.getName() + ":" + b + "是否串行："+ sequential);
-
             // 设置用户组
             List<String> group = new ArrayList<>();
             group.add("caiwu");
             group.add("department");
-            flow.setCandidateGroups(group);
+//            flow.setCandidateGroups(group);
         });
 
 
@@ -120,10 +136,21 @@ public class DeploymentTest {
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
         RepositoryService repositoryService = processEngine.getRepositoryService();
 
-        Deployment deployment = repositoryService.createDeploymentQuery().deploymentId("77501").singleResult();
+        Deployment deployment = repositoryService.createDeploymentQuery().deploymentId("107501").singleResult();
         ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery().deploymentId(deployment.getId()).singleResult();
-        ProcessInstance instance = processEngine.getRuntimeService().startProcessInstanceById(processDefinition.getId());
+        Map<String, Object> map = new HashMap<>();
+        List<String> persons = new ArrayList<>();
+        persons.add("wangwu");
+        persons.add("zhaoliu");
+        map.put("assigneeList", persons);
+        ProcessInstance instance = processEngine.getRuntimeService().startProcessInstanceById(processDefinition.getId(), map);
         getDeclaredFields(instance);
+    }
+
+    @Test
+    public void testCompleteTask() {
+        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+        processEngine.getTaskService().complete("115002");
     }
 
 
@@ -134,7 +161,7 @@ public class DeploymentTest {
     public void testGetCurrentTask() {
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
         Task task = processEngine.getTaskService().createTaskQuery().taskId("80005").singleResult();
-        List<Task> caiwu = processEngine.getTaskService().createTaskQuery().processInstanceId("80001").taskCandidateGroup("caiwu").list();
+        List<Task> caiwu = processEngine.getTaskService().createTaskQuery().processInstanceId("80001").taskCandidateGroup("department").list();
         caiwu.forEach(item -> {
             getDeclaredFields(item);
         });
@@ -156,7 +183,7 @@ public class DeploymentTest {
     @Test
     public void testGetBpmnModel() {
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
-        BpmnModel bpmnModel = processEngine.getRepositoryService().getBpmnModel("Process_1cj3qr8:1:77504");
+        BpmnModel bpmnModel = processEngine.getRepositoryService().getBpmnModel("Process_1cj3qr8:6:107504");
         getDeclaredFields(bpmnModel);
     }
 

@@ -14,7 +14,6 @@ import org.activiti.engine.identity.Group;
 import org.activiti.engine.identity.User;
 import org.activiti.engine.repository.Deployment;
 import org.activiti.engine.repository.ProcessDefinition;
-import org.activiti.engine.runtime.Execution;
 import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.task.IdentityLink;
 import org.activiti.engine.task.Task;
@@ -151,6 +150,34 @@ public class DeploymentTest {
         processEngine.getIdentityService().createGroupQuery().groupId("80006");
     }
 
+    /**
+     * 获取部署后的模型
+     */
+    @Test
+    public void testGetBpmnModel() {
+        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+        BpmnModel bpmnModel = processEngine.getRepositoryService().getBpmnModel("Process_1cj3qr8:1:77504");
+        getDeclaredFields(bpmnModel);
+    }
+
+
+    /**
+     * 创建用户任务组
+     */
+    @Test
+    public void testGetRuIdentityLink() {
+        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+        Group group = processEngine.getIdentityService().newGroup("1");
+        getDeclaredFields(group);
+        group.setName("caigou");
+        group.setType("candidate");
+
+        processEngine.getIdentityService().saveGroup(group);
+    }
+
+    /**
+     * 获取用户配置信息
+     */
     @Test
     public void testIdentitylink() {
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
@@ -158,8 +185,6 @@ public class DeploymentTest {
         identityLinksForProcessInstance.forEach(item -> {
             getDeclaredFields(item);
         });
-
-        Execution execution = processEngine.getRuntimeService().createExecutionQuery().processInstanceId("80001").singleResult();
     }
 
     /**
@@ -168,7 +193,7 @@ public class DeploymentTest {
     @Test
     public void testQueryGroup() {
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
-        Group group = processEngine.getIdentityService().createGroupQuery().groupId("80006").singleResult();
+        Group group = processEngine.getIdentityService().createGroupQuery().groupId("1").singleResult();
         List<User> list = processEngine.getIdentityService().createUserQuery().memberOfGroup(group.getId()).list();
         System.out.println(list);
     }

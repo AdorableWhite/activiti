@@ -80,22 +80,27 @@ public class DeploymentTest {
             multiInstanceLoopCharacteristics.setElementVariable("assignee");
             //完成条件 已完成数等于实例数
             multiInstanceLoopCharacteristics.setCompletionCondition("${nrOfActiveInstances == nrOfInstances}");
-            //并行
+            // 是否顺序
             multiInstanceLoopCharacteristics.setSequential(loopCharacteristics.isSequential());
 //            taskNode.setAssignee("${assignee}");
             //设置多实例属性
             flow.setLoopCharacteristics(multiInstanceLoopCharacteristics);
-            /*//设置监听器
-            taskNode.setExecutionListeners(countersignTaskListener());
+            //设置监听器
+//            taskNode.setExecutionListeners(countersignTaskListener());
             //设置审批人
-            taskNode.setCandidateUsers(candidateUser);*/
+            List<String> users = new ArrayList<>();
+            users.add("user01");
+            users.add("user02");
+            users.add("user03");
+            flow.setCandidateUsers(users);
 
             boolean sequential = loopCharacteristics.isSequential();
             System.out.println(flow.getName() + ":" + b + "是否串行："+ sequential);
             // 设置用户组
             List<String> group = new ArrayList<>();
-            group.add("caiwu");
-            group.add("department");
+            group.add("depart01");
+            group.add("depart01");
+            group.add("depart03");
 //            flow.setCandidateGroups(group);
         });
 
@@ -103,8 +108,8 @@ public class DeploymentTest {
 
         //
         Deployment deploy = repositoryService.createDeployment()
-                .addBpmnModel("template.bpmn", bpmnModel)
-                .name("test").deploy();
+                .addBpmnModel("test0807003.bpmn", bpmnModel)
+                .name("test0807003").deploy();
         Field[] declaredFields = deploy.getClass().getDeclaredFields();
         Arrays.stream(declaredFields).forEach(declaredField -> {
             declaredField.setAccessible(true);
@@ -136,15 +141,36 @@ public class DeploymentTest {
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
         RepositoryService repositoryService = processEngine.getRepositoryService();
 
-        Deployment deployment = repositoryService.createDeploymentQuery().deploymentId("107501").singleResult();
+        Deployment deployment = repositoryService.createDeploymentQuery().deploymentId("140001").singleResult();
         ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery().deploymentId(deployment.getId()).singleResult();
         Map<String, Object> map = new HashMap<>();
         List<String> persons = new ArrayList<>();
-        persons.add("wangwu");
-        persons.add("zhaoliu");
+        persons.add("depart01");
+        persons.add("depart02");
+        persons.add("depart03");
         map.put("assigneeList", persons);
         ProcessInstance instance = processEngine.getRuntimeService().startProcessInstanceById(processDefinition.getId(), map);
+//        ProcessInstance instance = processEngine.getRuntimeService().startProcessInstanceById(processDefinition.getId());
         getDeclaredFields(instance);
+    }
+
+    @Test
+    public void testSearchTaskByAssignee() {
+        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+
+        String processInstanceId = "145001";
+        // 依照流程实例id 查询
+        List<Task> list = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).list();
+
+        List<Task> depart01 = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskCandidateGroup("depart01").list();
+        List<Task> userList = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskCandidateUser("user01").list();
+        List<Task> assigneeList = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskAssignee("depart01").list();
+        List<Task> user01 = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskAssignee("user01").list();
+        // 依照实例和 组查询
+        List<Task> productList = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskCandidateGroup("product").list();
+        List<Task> developerList = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskCandidateGroup("developer").list();
+        List<Task> develList = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskCandidateGroup("devel").list();
+        System.out.println();
     }
 
     @Test
@@ -165,6 +191,20 @@ public class DeploymentTest {
         caiwu.forEach(item -> {
             getDeclaredFields(item);
         });
+
+    }
+
+    @Test
+    public void testGetCurrentTaskList() {
+        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+        List<Task> taskList = processEngine.getTaskService().createTaskQuery().processInstanceId("122501").list();
+        taskList.forEach(task -> {
+            getDeclaredFields(task);
+        });
+    }
+
+    @Test
+    public void test() {
 
     }
 
@@ -240,6 +280,7 @@ public class DeploymentTest {
         BpmnModel model = bpmnXMLConverter.convertToBpmnModel(xmlStreamReader);
         // model 设置可执行
         model.getMainProcess().setExecutable(true);
+
         return model;
     }
 

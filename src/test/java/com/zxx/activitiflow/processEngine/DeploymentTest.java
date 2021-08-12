@@ -14,6 +14,7 @@ import org.activiti.engine.identity.Group;
 import org.activiti.engine.identity.User;
 import org.activiti.engine.repository.Deployment;
 import org.activiti.engine.repository.ProcessDefinition;
+import org.activiti.engine.runtime.Execution;
 import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.task.IdentityLink;
 import org.activiti.engine.task.Task;
@@ -37,7 +38,8 @@ public class DeploymentTest {
 
 //    private static final String CLASSPATH_RESOURCE = "bpmn/VacationRequest.bpmn20.xml";
 //    private static final String CLASSPATH_RESOURCE = "src/main/resources/bpmn/diagram.xml";
-    private static final String CLASSPATH_RESOURCE = "src/main/resources/bpmn/multi.bpmn20.xml";
+//    private static final String CLASSPATH_RESOURCE = "src/main/resources/bpmn/multi.bpmn20.xml";
+    private static final String CLASSPATH_RESOURCE = "src/main/resources/bpmn/VacationRequest.bpmn20.xml";
 
 
     /**
@@ -56,8 +58,28 @@ public class DeploymentTest {
         System.out.println(count);
     }
 
+    @Test
+    void testCreateDeployWithout() {
+        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+        RepositoryService repositoryService = processEngine.getRepositoryService();
+        BpmnModel bpmnModel = convertModelFromFile(CLASSPATH_RESOURCE);
+        //
+        Deployment deploy = repositoryService.createDeployment()
+                .addBpmnModel("test0807005.bpmn", bpmnModel)
+                .name("test0807005").deploy();
+        Field[] declaredFields = deploy.getClass().getDeclaredFields();
+        Arrays.stream(declaredFields).forEach(declaredField -> {
+            declaredField.setAccessible(true);
+            try {
+                System.out.println(declaredField.getName() + ":" + declaredField.get(deploy));
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
     /**
-     * 部署
+     * 部署 tianjia shili
      */
     @Test
     void testCreateDeploy() {
@@ -92,7 +114,7 @@ public class DeploymentTest {
             users.add("user01");
             users.add("user02");
             users.add("user03");
-            flow.setCandidateUsers(users);
+//            flow.setCandidateUsers(users);
 
             boolean sequential = loopCharacteristics.isSequential();
             System.out.println(flow.getName() + ":" + b + "是否串行："+ sequential);
@@ -108,8 +130,8 @@ public class DeploymentTest {
 
         //
         Deployment deploy = repositoryService.createDeployment()
-                .addBpmnModel("test0807003.bpmn", bpmnModel)
-                .name("test0807003").deploy();
+                .addBpmnModel("test0807004.bpmn", bpmnModel)
+                .name("test0807004").deploy();
         Field[] declaredFields = deploy.getClass().getDeclaredFields();
         Arrays.stream(declaredFields).forEach(declaredField -> {
             declaredField.setAccessible(true);
@@ -141,7 +163,7 @@ public class DeploymentTest {
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
         RepositoryService repositoryService = processEngine.getRepositoryService();
 
-        Deployment deployment = repositoryService.createDeploymentQuery().deploymentId("140001").singleResult();
+        Deployment deployment = repositoryService.createDeploymentQuery().deploymentId("165001").singleResult();
         ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery().deploymentId(deployment.getId()).singleResult();
         Map<String, Object> map = new HashMap<>();
         List<String> persons = new ArrayList<>();
@@ -155,28 +177,76 @@ public class DeploymentTest {
     }
 
     @Test
-    public void testSearchTaskByAssignee() {
+    public void testCompleteTask() {
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+//        processEngine.getTaskService().complete("157501");
+//        ProcessInstance[177501]
+        List<String> persons = new ArrayList<>();
+        persons.add("test01");
+        persons.add("test02");
+        Map<String, Object> map = new HashMap<>();
+        map.put("assigneeList2", persons);
+        processEngine.getTaskService().complete("177524", map);
+    }
 
-        String processInstanceId = "145001";
-        // 依照流程实例id 查询
-        List<Task> list = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).list();
+    @Test
+    public void testExecution() {
+        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+        String processInstanceId = "177501";
+        String executionId = "177512";
+        String taskId = "177524";
+        Task task = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskId(taskId).singleResult();
+        List<Execution> zhu = processEngine.getRuntimeService().createExecutionQuery().processInstanceId(processInstanceId).onlyProcessInstanceExecutions().list();
+        List<Execution> child = processEngine.getRuntimeService().createExecutionQuery().processInstanceId(processInstanceId).onlyChildExecutions().list();
+        List<Execution> sub = processEngine.getRuntimeService().createExecutionQuery().processInstanceId(processInstanceId).onlySubProcessExecutions().list();
 
-        List<Task> depart01 = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskCandidateGroup("depart01").list();
-        List<Task> userList = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskCandidateUser("user01").list();
-        List<Task> assigneeList = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskAssignee("depart01").list();
-        List<Task> user01 = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskAssignee("user01").list();
-        // 依照实例和 组查询
-        List<Task> productList = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskCandidateGroup("product").list();
-        List<Task> developerList = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskCandidateGroup("developer").list();
-        List<Task> develList = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskCandidateGroup("devel").list();
+
+        String executionId3 = "177505";
+        String executionId4 = "180005";
+
+        List<Task> list3 = processEngine.getTaskService().createTaskQuery().executionId(executionId3).list();
+        List<Task> list4 = processEngine.getTaskService().createTaskQuery().executionId(executionId4).list();
+
+
+
         System.out.println();
     }
 
     @Test
-    public void testCompleteTask() {
+    public void testCompleteTaskWithOutVariables() {
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
-        processEngine.getTaskService().complete("115002");
+//        ProcessInstance[167501]
+        processEngine.getTaskService().complete("177520");
+        processEngine.getTaskService().complete("177522");
+    }
+
+    @Test
+    public void testSearchTaskByAssignee() {
+        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+
+        // Task[id=150022, name=??]  Task[id=150024, name=??]
+        String processInstanceId = "150001";
+        // 依照流程实例id 查询
+        List<Task> list = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).list();
+        Task task = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskId("150020").singleResult();
+        List<Task> list1 = processEngine.getTaskService().createTaskQuery().executionId("150010").list();
+
+        List<Execution> executionList = processEngine.getRuntimeService().createExecutionQuery().processInstanceId("150001").list();
+        Optional<Execution> first = executionList.stream().filter(execution -> execution.getParentId() == "150005").findFirst();
+        Execution execution = processEngine.getRuntimeService().createExecutionQuery().processInstanceId("150001").executionId("152501").singleResult();
+
+
+        //152501
+        System.out.println();
+    }
+
+
+
+    @Test
+    public void testExecutionSearch() {
+        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+        List<Execution> list = processEngine.getRuntimeService().createExecutionQuery().processInstanceId("150001").list();
+
     }
 
 

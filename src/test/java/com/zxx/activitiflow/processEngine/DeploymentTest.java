@@ -173,6 +173,7 @@ public class DeploymentTest {
         map.put("assigneeList", persons);
         ProcessInstance instance = processEngine.getRuntimeService().startProcessInstanceById(processDefinition.getId(), map);
 //        ProcessInstance instance = processEngine.getRuntimeService().startProcessInstanceById(processDefinition.getId());
+//        ProcessInstance[210001]
         getDeclaredFields(instance);
     }
 
@@ -186,19 +187,22 @@ public class DeploymentTest {
         persons.add("test02");
         Map<String, Object> map = new HashMap<>();
         map.put("assigneeList2", persons);
-        processEngine.getTaskService().complete("177524", map);
+        map.put("assigneeList3", persons);
+        processEngine.getTaskService().complete("195020", map);
     }
 
     @Test
     public void testExecution() {
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
-        String processInstanceId = "177501";
-        String executionId = "177512";
-        String taskId = "177524";
+        String processInstanceId = "210001";
+
+        String taskId = "210022";
         Task task = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskId(taskId).singleResult();
-        List<Execution> zhu = processEngine.getRuntimeService().createExecutionQuery().processInstanceId(processInstanceId).onlyProcessInstanceExecutions().list();
-        List<Execution> child = processEngine.getRuntimeService().createExecutionQuery().processInstanceId(processInstanceId).onlyChildExecutions().list();
-        List<Execution> sub = processEngine.getRuntimeService().createExecutionQuery().processInstanceId(processInstanceId).onlySubProcessExecutions().list();
+        // 195001
+        String executionId = "195001";
+        List<Execution> zhuExcution = processEngine.getRuntimeService().createExecutionQuery().processInstanceId(processInstanceId).onlyProcessInstanceExecutions().list();
+        List<Execution> childExcution = processEngine.getRuntimeService().createExecutionQuery().processInstanceId(processInstanceId).onlyChildExecutions().list();
+        List<Execution> subExcution = processEngine.getRuntimeService().createExecutionQuery().processInstanceId(processInstanceId).executionId(executionId).onlySubProcessExecutions().list();
 
 
         String executionId3 = "177505";
@@ -212,12 +216,52 @@ public class DeploymentTest {
         System.out.println();
     }
 
+    /**
+     * 获取子执行
+     */
+    @Test
+    public void testGetSubExcution() {
+        String processInstanceId ="210001";
+        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+        List<Execution> child = processEngine.getRuntimeService().createExecutionQuery().processInstanceId(processInstanceId).onlyChildExecutions().list();
+        List<Task> allSubTaskList = child.stream().map(Execution::getId).map(executionId -> {
+            List<Task> subTaskList = processEngine.getTaskService().createTaskQuery().executionId(executionId).list();
+            return subTaskList;
+        }).flatMap(item -> item.stream()).collect(Collectors.toList());
+        System.out.println(allSubTaskList);
+    }
+
     @Test
     public void testCompleteTaskWithOutVariables() {
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
 //        ProcessInstance[167501]
-        processEngine.getTaskService().complete("177520");
-        processEngine.getTaskService().complete("177522");
+        processEngine.getTaskService().complete("205003");
+    }
+
+    @Test
+    public void testCommonTask() {
+        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+        String taskId = "190003";
+        String taskGroup = "defaultGroup";
+        String processInstanceId = "177501";
+        processEngine.getTaskService().addCandidateGroup(taskId, taskGroup);
+        List<Task> list = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskCandidateGroup(taskGroup).list();
+        System.out.println(list);
+    }
+
+    @Test
+    public void referralTask() {
+        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+        String processInstanceId = "177501";
+        String assignee = "referralPerson";
+        String group = "referralGroup";
+        String taskId = "180010";
+        Task task = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskId(taskId).singleResult();
+//        task.setAssignee(assignee);
+        processEngine.getTaskService().addCandidateGroup(taskId, group);
+        List<Task> list = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskAssignee(assignee).list();
+        List<Task> groupList = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskCandidateGroup(group).list();
+        System.out.println(list);
     }
 
     @Test

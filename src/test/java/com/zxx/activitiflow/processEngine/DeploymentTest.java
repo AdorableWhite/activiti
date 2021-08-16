@@ -257,7 +257,7 @@ public class DeploymentTest {
         TaskService taskService = processEngine.getTaskService();
         ManagementService managementService = processEngine.getManagementService();
         // 240002
-        String taskId = "242502";
+        String taskId = "235022";
         // 获取当前任务
         TaskEntity taskEntity = (TaskEntity) taskService.createTaskQuery().taskId(taskId).singleResult();
         //获取当前的流程实例对象
@@ -290,14 +290,17 @@ public class DeploymentTest {
         Process processCache = processDefinitionCacheEntry.getProcess();
         System.out.println(processCache);
 
-        managementService.executeCommand(new JumpTestCmd(taskId, "step1_2"));
+        String executionId = managementService.executeCommand(new JumpTestCmd(taskId, "step1_2"));
+
+        List<Task> list = processEngine.getTaskService().createTaskQuery().executionId(executionId).list();
+        System.out.println(list);
 
         //TODO ---------- 完成任务之前，上面的代码是为了重新更新一下缓存中的process数据，避免报空指针异常
         //TODO 为什么要这么做呢？其实就是确保在当前这个新增节点完成任务的时候强制activity使用的是最新的流程实例对象
         // 缓存数据持久化
 //        ProcessDefinitionInfoCache
-        String creaTaskId = "";
-        taskService.complete(creaTaskId);
+//        String creaTaskId = "";
+//        taskService.complete(creaTaskId);
 
     }
 

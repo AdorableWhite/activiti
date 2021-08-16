@@ -12,7 +12,7 @@ import org.activiti.engine.impl.persistence.entity.TaskEntity;
 import org.activiti.engine.impl.persistence.entity.TaskEntityManager;
 import org.activiti.engine.impl.util.ProcessDefinitionUtil;
 
-public class JumpTestCmd implements Command<Void> {
+public class JumpTestCmd implements Command<String> {
 
     private String taskId;  //当前任务ID
     private String targetNodeId;    //跳转的目标节点ID
@@ -23,7 +23,7 @@ public class JumpTestCmd implements Command<Void> {
     }
 
     @Override
-    public Void execute(CommandContext commandContext) {
+    public String execute(CommandContext commandContext) {
         ActivitiEngineAgenda contextAgenda = commandContext.getAgenda();
         TaskEntityManager taskEntityManager = commandContext.getTaskEntityManager();
         TaskEntity taskEntity = taskEntityManager.findById(taskId);
@@ -53,6 +53,6 @@ public class JumpTestCmd implements Command<Void> {
         taskEntityManager.delete(taskId);
         //更新历史任务表
         historyManager.recordTaskEnd(taskId,"do-jump");
-        return null;
+        return executionId;
     }
 }

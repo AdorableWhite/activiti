@@ -1,17 +1,21 @@
 package com.zxx.activitiflow.processEngine;
 
 import com.zxx.activitiflow.ActivitiflowApplication;
+import com.zxx.activitiflow.processEngine.cmd.GetProcessDefinitionCacheEntryCmd;
+import com.zxx.activitiflow.processEngine.cmd.JumpTestCmd;
+import com.zxx.activitiflow.processEngine.cmd.ProcessGetCmd;
 import lombok.extern.slf4j.Slf4j;
 import org.activiti.bpmn.converter.BpmnXMLConverter;
-import org.activiti.bpmn.model.BpmnModel;
-import org.activiti.bpmn.model.FlowElement;
-import org.activiti.bpmn.model.MultiInstanceLoopCharacteristics;
-import org.activiti.bpmn.model.UserTask;
-import org.activiti.engine.ProcessEngine;
-import org.activiti.engine.ProcessEngines;
-import org.activiti.engine.RepositoryService;
+import org.activiti.bpmn.model.Process;
+import org.activiti.bpmn.model.*;
+import org.activiti.engine.*;
 import org.activiti.engine.identity.Group;
 import org.activiti.engine.identity.User;
+import org.activiti.engine.impl.bpmn.behavior.UserTaskActivityBehavior;
+import org.activiti.engine.impl.bpmn.parser.factory.ActivityBehaviorFactory;
+import org.activiti.engine.impl.cfg.ProcessEngineConfigurationImpl;
+import org.activiti.engine.impl.persistence.deploy.ProcessDefinitionCacheEntry;
+import org.activiti.engine.impl.persistence.entity.TaskEntity;
 import org.activiti.engine.repository.Deployment;
 import org.activiti.engine.repository.ProcessDefinition;
 import org.activiti.engine.runtime.Execution;
@@ -173,7 +177,7 @@ public class DeploymentTest {
         map.put("assigneeList", persons);
         ProcessInstance instance = processEngine.getRuntimeService().startProcessInstanceById(processDefinition.getId(), map);
 //        ProcessInstance instance = processEngine.getRuntimeService().startProcessInstanceById(processDefinition.getId());
-//        ProcessInstance[210001]
+//        ProcessInstance[235001]
         getDeclaredFields(instance);
     }
 
@@ -235,7 +239,104 @@ public class DeploymentTest {
     public void testCompleteTaskWithOutVariables() {
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
 //        ProcessInstance[167501]
-        processEngine.getTaskService().complete("205003");
+        processEngine.getTaskService().complete("245002");
+    }
+
+    private static UserTaskActivityBehavior createUserTaskBehavior(UserTask userTask, ProcessEngine processEngine) {
+        ProcessEngineConfigurationImpl processEngineConfiguration = (ProcessEngineConfigurationImpl)processEngine.getProcessEngineConfiguration();
+        ActivityBehaviorFactory activityBehaviorFactory = processEngineConfiguration.getActivityBehaviorFactory();
+        UserTaskActivityBehavior userTaskActivityBehavior = activityBehaviorFactory.createUserTaskActivityBehavior(userTask);
+        return userTaskActivityBehavior;
+    }
+    /**
+     * 运行实例中新增审批节点
+     */
+    @Test
+    public void testAddNewTaskInActiviteProcessInstance() {
+        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+        TaskService taskService = processEngine.getTaskService();
+        ManagementService managementService = processEngine.getManagementService();
+        // 240002
+        String taskId = "242502";
+        // 获取当前任务
+        TaskEntity taskEntity = (TaskEntity) taskService.createTaskQuery().taskId(taskId).singleResult();
+        //获取当前的流程实例对象
+        String processDefinitionId = taskEntity.getProcessDefinitionId();
+        Process process = managementService.executeCommand(new ProcessGetCmd(processDefinitionId));
+        System.out.println(process.getName());
+        //构造动态的任务userTask对象
+        UserTask userTask = new UserTask();
+        userTask.setId("step1_2");
+        userTask.setName("新增的任务节点D");
+        userTask.setAssignee("zcy");
+        //设置userTask的行为类
+        userTask.setBehavior(createUserTaskBehavior(userTask,processEngine));
+        String targetActivityId = "firstParallel";
+//        String targetActivityId = taskEntity.getName();
+        //设置连线信息
+        SequenceFlow sequenceFlow = new SequenceFlow();
+        sequenceFlow.setId("zcy");
+        sequenceFlow.setName("newFlow");
+        userTask.setOutgoingFlows(Arrays.asList(sequenceFlow));
+        sequenceFlow.setTargetFlowElement(process.getFlowElement(targetActivityId));
+        sequenceFlow.setTargetRef(targetActivityId);
+        //将任务task和连线添加到process中
+        process.addFlowElement(userTask);
+        process.addFlowElement(sequenceFlow);
+
+        ProcessDefinitionCacheEntry processDefinitionCacheEntry = managementService
+                .executeCommand(new GetProcessDefinitionCacheEntryCmd(processDefinitionId));
+        processDefinitionCacheEntry.setProcess(process);
+        Process processCache = processDefinitionCacheEntry.getProcess();
+        System.out.println(processCache);
+
+        managementService.executeCommand(new JumpTestCmd(taskId, "step1_2"));
+
+        //TODO ---------- 完成任务之前，上面的代码是为了重新更新一下缓存中的process数据，避免报空指针异常
+        //TODO 为什么要这么做呢？其实就是确保在当前这个新增节点完成任务的时候强制activity使用的是最新的流程实例对象
+        // 缓存数据持久化
+//        ProcessDefinitionInfoCache
+        String creaTaskId = "";
+        taskService.complete(creaTaskId);
+
+    }
+
+
+    @Test
+    public void completeJumpPoint() {
+        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+        TaskService taskService = processEngine.getTaskService();
+        ManagementService managementService = processEngine.getManagementService();
+        String taskId = "227524";
+        // 获取当前的任务
+        TaskEntity taskEntity = (TaskEntity) taskService.createTaskQuery().taskId(taskId).singleResult();
+        System.out.println(taskEntity);
+        String processDefinitionId = taskEntity.getProcessDefinitionId();
+        Process process = managementService.executeCommand(new ProcessGetCmd(processDefinitionId));
+        System.out.println(process);
+
+        UserTask userTask = new UserTask();
+        userTask.setId("step1_2");
+        userTask.setName("newFlow");
+        userTask.setAssignee("zcy");
+        userTask.setBehavior(createUserTaskBehavior(userTask,processEngine));
+
+        String targetActivityId = "firstParallel";
+        SequenceFlow sequenceFlow = new SequenceFlow();
+        sequenceFlow.setId("zcy");
+        sequenceFlow.setName("新增连线");
+        userTask.setOutgoingFlows(Arrays.asList(sequenceFlow));
+        sequenceFlow.setTargetFlowElement(process.getFlowElement(targetActivityId));
+        sequenceFlow.setTargetRef(targetActivityId);
+        process.addFlowElement(userTask);
+        process.addFlowElement(sequenceFlow);
+
+        ProcessDefinitionCacheEntry processDefinitionCacheEntry = managementService
+                .executeCommand(new GetProcessDefinitionCacheEntryCmd(processDefinitionId));
+        processDefinitionCacheEntry.setProcess(process);
+        //TODO ---------- 完成任务之前，上面的代码是为了重新更新一下缓存中的process数据，避免报空指针异常
+        //TODO 为什么要这么做呢？其实就是确保在当前这个新增节点完成任务的时候强制activity使用的是最新的流程实例对象
+        taskService.complete(taskId);
     }
 
     @Test
@@ -337,7 +438,7 @@ public class DeploymentTest {
     @Test
     public void testGetBpmnModel() {
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
-        BpmnModel bpmnModel = processEngine.getRepositoryService().getBpmnModel("Process_1cj3qr8:6:107504");
+        BpmnModel bpmnModel = processEngine.getRepositoryService().getBpmnModel("Process_1cj3qr8:13:165004");
         getDeclaredFields(bpmnModel);
     }
 

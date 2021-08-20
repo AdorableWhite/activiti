@@ -43,7 +43,8 @@ public class DeploymentTest {
 //    private static final String CLASSPATH_RESOURCE = "bpmn/VacationRequest.bpmn20.xml";
 //    private static final String CLASSPATH_RESOURCE = "src/main/resources/bpmn/diagram.xml";
 //    private static final String CLASSPATH_RESOURCE = "src/main/resources/bpmn/multi.bpmn20.xml";
-    private static final String CLASSPATH_RESOURCE = "src/main/resources/bpmn/VacationRequest.bpmn20.xml";
+//    private static final String CLASSPATH_RESOURCE = "src/main/resources/bpmn/VacationRequest.bpmn20.xml";
+    private static final String CLASSPATH_RESOURCE = "src/main/resources/bpmn/multiTest.bpmn";
 
 
     /**
@@ -106,6 +107,8 @@ public class DeploymentTest {
             multiInstanceLoopCharacteristics.setElementVariable("assignee");
             //完成条件 已完成数等于实例数
             multiInstanceLoopCharacteristics.setCompletionCondition("${nrOfActiveInstances == nrOfInstances}");
+//            multiInstanceLoopCharacteristics.setCompletionCondition("CompletionCondition");
+//            multiInstanceLoopCharacteristics.setCompletionCondition("${nrOfCompletedInstances/nrOfInstances > 0}");
             // 是否顺序
             multiInstanceLoopCharacteristics.setSequential(loopCharacteristics.isSequential());
 //            taskNode.setAssignee("${assignee}");
@@ -127,7 +130,7 @@ public class DeploymentTest {
             group.add("depart01");
             group.add("depart01");
             group.add("depart03");
-//            flow.setCandidateGroups(group);
+            flow.setCandidateGroups(group);
         });
 
 
@@ -136,6 +139,7 @@ public class DeploymentTest {
         Deployment deploy = repositoryService.createDeployment()
                 .addBpmnModel("test0807004.bpmn", bpmnModel)
                 .name("test0807004").deploy();
+//        DeploymentEntity[id=270001, name=test0807004]
         Field[] declaredFields = deploy.getClass().getDeclaredFields();
         Arrays.stream(declaredFields).forEach(declaredField -> {
             declaredField.setAccessible(true);
@@ -166,8 +170,9 @@ public class DeploymentTest {
     public void testCreateProcessDefinetion() {
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
         RepositoryService repositoryService = processEngine.getRepositoryService();
+        String deploymentId = "270001";
+        Deployment deployment = repositoryService.createDeploymentQuery().deploymentId(deploymentId).singleResult();
 
-        Deployment deployment = repositoryService.createDeploymentQuery().deploymentId("165001").singleResult();
         ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery().deploymentId(deployment.getId()).singleResult();
         Map<String, Object> map = new HashMap<>();
         List<String> persons = new ArrayList<>();
@@ -175,10 +180,30 @@ public class DeploymentTest {
         persons.add("depart02");
         persons.add("depart03");
         map.put("assigneeList", persons);
+
+        /*BpmnModel bpmnModel = processEngine.getRepositoryService().getBpmnModel(processDefinition.getId());
+        List<UserTask> collect = bpmnModel.getMainProcess().getFlowElements().stream().filter(flow -> flow instanceof UserTask).map(flow -> (UserTask) flow).collect(Collectors.toList());
+        collect.forEach(userTask -> {
+            if(userTask.hasMultiInstanceLoopCharacteristics()) {
+                String completionCondition = userTask.getLoopCharacteristics().getCompletionCondition();
+                if(map.containsKey(completionCondition)) {
+                    userTask.getLoopCharacteristics().setCompletionCondition((String) map.get(completionCondition));
+                }
+            }
+        });
+
+
+        BpmnModel bpmnModel1 = processEngine.getRepositoryService().getBpmnModel(processDefinition.getId());*/
+
         ProcessInstance instance = processEngine.getRuntimeService().startProcessInstanceById(processDefinition.getId(), map);
 //        ProcessInstance instance = processEngine.getRuntimeService().startProcessInstanceById(processDefinition.getId());
-//        ProcessInstance[235001]
+//       ProcessInstance[272501]
         getDeclaredFields(instance);
+    }
+
+    @Test
+    public void testGetBpmn() {
+        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
     }
 
     @Test
@@ -192,15 +217,24 @@ public class DeploymentTest {
         Map<String, Object> map = new HashMap<>();
         map.put("assigneeList2", persons);
         map.put("assigneeList3", persons);
-        processEngine.getTaskService().complete("195020", map);
+        processEngine.getTaskService().complete("265021", map);
+    }
+
+    @Test
+    public void testChangeBpmnModel() {
+        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+        String processInstanceId = "272501";
+        String candidateGroup = "depart01";
+        List<Task> list = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskCandidateGroup(candidateGroup).list();
+        System.out.println(list);
     }
 
     @Test
     public void testExecution() {
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
-        String processInstanceId = "210001";
+        String processInstanceId = "272501";
 
-        String taskId = "210022";
+        String taskId = "272520";
         Task task = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskId(taskId).singleResult();
         // 195001
         String executionId = "195001";
@@ -239,7 +273,9 @@ public class DeploymentTest {
     public void testCompleteTaskWithOutVariables() {
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
 //        ProcessInstance[167501]
-        processEngine.getTaskService().complete("245002");
+        processEngine.getTaskService().complete("252521");
+        processEngine.getTaskService().complete("252523");
+        processEngine.getTaskService().complete("252525");
     }
 
     private static UserTaskActivityBehavior createUserTaskBehavior(UserTask userTask, ProcessEngine processEngine) {

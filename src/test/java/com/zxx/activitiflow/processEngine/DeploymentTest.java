@@ -107,6 +107,7 @@ public class DeploymentTest {
             multiInstanceLoopCharacteristics.setElementVariable("assignee");
             //完成条件 已完成数等于实例数
             multiInstanceLoopCharacteristics.setCompletionCondition("${nrOfActiveInstances == nrOfInstances}");
+//            multiInstanceLoopCharacteristics.setCompletionCondition("${instanceCompleteTaskListener.exec(execution)}");
 //            multiInstanceLoopCharacteristics.setCompletionCondition("CompletionCondition");
 //            multiInstanceLoopCharacteristics.setCompletionCondition("${nrOfCompletedInstances/nrOfInstances > 0}");
             // 是否顺序
@@ -130,7 +131,7 @@ public class DeploymentTest {
             group.add("depart01");
             group.add("depart01");
             group.add("depart03");
-            flow.setCandidateGroups(group);
+//            flow.setCandidateGroups(group);
         });
 
 
@@ -139,7 +140,7 @@ public class DeploymentTest {
         Deployment deploy = repositoryService.createDeployment()
                 .addBpmnModel("test0807004.bpmn", bpmnModel)
                 .name("test0807004").deploy();
-//        DeploymentEntity[id=270001, name=test0807004]
+//        DeploymentEntity[id=1, name=test0807004]
         Field[] declaredFields = deploy.getClass().getDeclaredFields();
         Arrays.stream(declaredFields).forEach(declaredField -> {
             declaredField.setAccessible(true);
@@ -170,7 +171,7 @@ public class DeploymentTest {
     public void testCreateProcessDefinetion() {
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
         RepositoryService repositoryService = processEngine.getRepositoryService();
-        String deploymentId = "270001";
+        String deploymentId = "1";
         Deployment deployment = repositoryService.createDeploymentQuery().deploymentId(deploymentId).singleResult();
 
         ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery().deploymentId(deployment.getId()).singleResult();
@@ -197,7 +198,7 @@ public class DeploymentTest {
 
         ProcessInstance instance = processEngine.getRuntimeService().startProcessInstanceById(processDefinition.getId(), map);
 //        ProcessInstance instance = processEngine.getRuntimeService().startProcessInstanceById(processDefinition.getId());
-//       ProcessInstance[272501]
+//       ProcessInstance[2501]
         getDeclaredFields(instance);
     }
 
@@ -232,25 +233,31 @@ public class DeploymentTest {
     @Test
     public void testExecution() {
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
-        String processInstanceId = "272501";
+        String processInstanceId = "2501";
+        List<Execution> list = processEngine.getRuntimeService().createExecutionQuery().processInstanceId(processInstanceId).list();
+        List<String> parentExecutionList = list.stream().map(item -> item.getParentId()).collect(Collectors.toList());
 
-        String taskId = "272520";
+
+        String taskId = "2520";
         Task task = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).taskId(taskId).singleResult();
         // 195001
-        String executionId = "195001";
         List<Execution> zhuExcution = processEngine.getRuntimeService().createExecutionQuery().processInstanceId(processInstanceId).onlyProcessInstanceExecutions().list();
         List<Execution> childExcution = processEngine.getRuntimeService().createExecutionQuery().processInstanceId(processInstanceId).onlyChildExecutions().list();
+        String executionId = zhuExcution.get(0).getId();
         List<Execution> subExcution = processEngine.getRuntimeService().createExecutionQuery().processInstanceId(processInstanceId).executionId(executionId).onlySubProcessExecutions().list();
 
 
-        String executionId3 = "177505";
-        String executionId4 = "180005";
+        String executionId3 = "2511";
+        String executionId4 = "2505";
 
         List<Task> list3 = processEngine.getTaskService().createTaskQuery().executionId(executionId3).list();
         List<Task> list4 = processEngine.getTaskService().createTaskQuery().executionId(executionId4).list();
 
 
-
+        String paraentExcutionId = "2501";
+        List<Execution> list1 = processEngine.getRuntimeService().createExecutionQuery().processInstanceId(processInstanceId).list();
+        List<Execution> childExcutionList = processEngine.getRuntimeService().createExecutionQuery().processInstanceId(processInstanceId).onlyChildExecutions().list();
+        List<Task> childTaskList = processEngine.getTaskService().createTaskQuery().processInstanceId(processInstanceId).list();
         System.out.println();
     }
 
@@ -273,9 +280,9 @@ public class DeploymentTest {
     public void testCompleteTaskWithOutVariables() {
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
 //        ProcessInstance[167501]
-        processEngine.getTaskService().complete("252521");
-        processEngine.getTaskService().complete("252523");
-        processEngine.getTaskService().complete("252525");
+        processEngine.getTaskService().complete("2524");
+//        processEngine.getTaskService().complete("2522");
+//        processEngine.getTaskService().complete("252525");
     }
 
     private static UserTaskActivityBehavior createUserTaskBehavior(UserTask userTask, ProcessEngine processEngine) {

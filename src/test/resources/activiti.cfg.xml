@@ -9,7 +9,7 @@
         <property name="jdbcUsername" value="root" />
         <property name="jdbcPassword" value="root" />
         <!-- 流程引擎启动和关闭时处理 数据库架构，查看activiti 数据库表版本是否有差异  -->
-        <property name="databaseSchemaUpdate" value="true" />
+        <property name="databaseSchemaUpdate" value="false" />
 
         <!-- 作业执行器 同 activiti engine 是否一起启动-->
         <property name="asyncExecutorActivate" value="false" />

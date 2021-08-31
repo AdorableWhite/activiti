@@ -32,6 +32,11 @@
             <version>${activiti-engine.version}</version>
         </dependency>
 
+        <!--<dependency>
+            <groupId>org.flowable</groupId>
+            <artifactId>flowable-spring-boot-starter</artifactId>
+            <version>6.5.0</version>
+        </dependency>-->
         <!-- https://mvnrepository.com/artifact/org.activiti/activiti-spring-boot-starter -->
        <!-- <dependency>
             <groupId>org.activiti</groupId>
@@ -103,6 +108,30 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+   <!-- <build>
+        <resources>
+            <resource>
+                <directory>src/main/java</directory>
+                <includes>
+                    <include>**/*.yml</include>
+                    <include>**/*.properties</include>
+                    <include>**/*.xml</include>
+                </includes>
+                <filtering>false</filtering>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>**/*.yml</include>
+                    <include>**/*.properties</include>
+                    <include>**/*.xml</include>
+                </includes>
+                <filtering>false</filtering>
+            </resource>
+        </resources>
+    </build>-->
+
 
     <build>
         <plugins>

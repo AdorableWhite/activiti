@@ -18,6 +18,11 @@ public class ActivitiServiceImpl implements ActivitiService {
     private ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
 
     @Override
+    public void createDeployment() {
+
+    }
+
+    @Override
     public void testCreateDeploy(String fileName) {
         Deployment deploy = processEngine.getRepositoryService().createDeployment()
                 .addClasspathResource("bpmn/" + fileName)

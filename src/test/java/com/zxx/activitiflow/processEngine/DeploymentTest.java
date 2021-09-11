@@ -1,5 +1,6 @@
 package com.zxx.activitiflow.processEngine;
 
+import cn.hutool.core.io.IoUtil;
 import com.zxx.activitiflow.ActivitiflowApplication;
 import com.zxx.activitiflow.processEngine.cmd.GetProcessDefinitionCacheEntryCmd;
 import com.zxx.activitiflow.processEngine.cmd.JumpTestCmd;
@@ -25,11 +26,16 @@ import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.task.IdentityLink;
 import org.activiti.engine.task.Task;
 import org.activiti.image.ProcessDiagramGenerator;
+import org.activiti.image.impl.DefaultProcessDiagramGenerator;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
@@ -49,6 +55,11 @@ public class DeploymentTest {
 //    private static final String CLASSPATH_RESOURCE = "src/main/resources/bpmn/VacationRequest.bpmn20.xml";
     private static final String CLASSPATH_RESOURCE = "src/main/resources/bpmn/multiTest.bpmn";
 
+
+    @Test
+    public void testXml2String() {
+
+    }
 
     /**
      * 部署
@@ -154,6 +165,57 @@ public class DeploymentTest {
             }
         });
     }
+
+    /**
+     * 获取图片base64流
+     */
+    @Test
+    public void getBase64(){
+        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+        String deploymentId = "1";
+        ProcessDefinition processDefinition = processEngine.getRepositoryService().createProcessDefinitionQuery().deploymentId(deploymentId).singleResult();
+        String diagramResourceName = processDefinition.getDiagramResourceName();
+        InputStream resourceAsStream = processEngine.getRepositoryService().getResourceAsStream(deploymentId, diagramResourceName);
+        byte[] bytes = IoUtil.readBytes(resourceAsStream);
+        String imageStr = Base64.getEncoder().encodeToString(bytes);
+        System.out.println("data:image/jpg;base64," + imageStr);
+    }
+
+    @Test
+    public void testString() {
+        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+        String processDefinitionId = "Process_081luby:1:4";
+        BpmnModel bpmnModel = processEngine.getRepositoryService().getBpmnModel(processDefinitionId);
+        DefaultProcessDiagramGenerator processDiagramGenerator = new DefaultProcessDiagramGenerator();
+        InputStream imageStream = processDiagramGenerator.generateDiagram(bpmnModel, "png","宋体", "微软雅黑", "黑体", null, 2.0);
+        byte[] bytes = IoUtil.readBytes(imageStream);
+        String imageStr = Base64.getEncoder().encodeToString(bytes);
+        System.out.println("data:image/jpg;base64," + imageStr);
+    }
+
+    @Test
+    public void testBpmn2Png() {
+
+    }
+
+    public void createFlowImage(MultipartFile file, HttpServletResponse response) throws IOException, XMLStreamException {
+        InputStream inputStream = file.getInputStream();
+        // 创建转换对象
+        BpmnXMLConverter converter = new BpmnXMLConverter();
+        // 创建XMLStreamReader读取XML资源
+        XMLInputFactory factory = XMLInputFactory.newInstance();
+        XMLStreamReader reader = factory.createXMLStreamReader(inputStream);
+        // 把XML转换成BpmnModel对象
+        BpmnModel bpmnModel = converter.convertToBpmnModel(reader);
+        // 使用默认配置获得流程图表生成器，并生成追踪图片字符流
+        DefaultProcessDiagramGenerator processDiagramGenerator = new DefaultProcessDiagramGenerator();
+        InputStream imageStream = processDiagramGenerator.generateDiagram(bpmnModel, "png","宋体", "微软雅黑", "黑体", null, 2.0);
+
+
+        ServletOutputStream output = response.getOutputStream();
+        IOUtils.copy(imageStream , output);
+    }
+
 
     public void getDeclaredFields(Object o) {
         Field[] declaredFields = o.getClass().getDeclaredFields();
